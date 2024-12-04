@@ -1,0 +1,21 @@
+# Base configuration for training
+training:
+  batch_size: 32
+  num_epochs: 3
+  learning_rate: 0.00005 
+  warmup_steps: 0
+  max_grad_norm: 1.0
+  weight_decay: 0.01
+  logging_steps: 100
+  save_steps: 1000
+  evaluation_steps: 500
+  
+# Output directories
+output:
+  model_dir: "saved_models"
+  log_dir: "logs"
+  
+# Training device settings
+device:
+  cuda: true
+  num_workers: 4

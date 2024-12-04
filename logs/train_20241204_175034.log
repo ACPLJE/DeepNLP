@@ -1,0 +1,20 @@
+[2024-12-04 17:50:34] INFO - train: Starting training process...
+[2024-12-04 17:50:34] INFO - train: Loading configurations...
+[2024-12-04 17:50:34] INFO - train: Using device: cuda
+[2024-12-04 17:50:34] INFO - train: Creating data loaders...
+[2024-12-04 17:51:17] INFO - train: Setting up models and trainer...
+[2024-12-04 17:51:17] INFO - train: Initializing distillation training...
+[2024-12-04 17:51:21] INFO - train: Starting training...
+[2024-12-04 17:51:21] ERROR - train: An error occurred: name 'DistilBertModel' is not defined
+Traceback (most recent call last):
+  File "/nas2/jieui/class/deepnlp/project/scripts/train.py", line 97, in main
+    trainer.train()
+  File "/nas2/jieui/class/deepnlp/project/src/trainers/base_trainer.py", line 74, in train
+    loss = self._training_step(batch)
+  File "/nas2/jieui/class/deepnlp/project/src/trainers/distillation_trainer.py", line 52, in _training_step
+    teacher_outputs = self.teacher_model(
+  File "/nas2/jieui/class/deepnlp/deepja/lib/python3.10/site-packages/torch/nn/modules/module.py", line 1501, in _call_impl
+    return forward_call(*args, **kwargs)
+  File "/nas2/jieui/class/deepnlp/project/src/models/base_model.py", line 39, in forward
+    if isinstance(self.base_model, DistilBertModel):
+NameError: name 'DistilBertModel' is not defined

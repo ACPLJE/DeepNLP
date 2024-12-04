@@ -1,0 +1,9 @@
+[2024-12-03 15:42:12] INFO - train: Starting training process...
+[2024-12-03 15:42:12] INFO - train: Loading configurations...
+[2024-12-03 15:42:12] INFO - train: Using device: cuda
+[2024-12-03 15:42:12] INFO - train: Creating data loader...
+[2024-12-03 15:42:12] ERROR - train: An error occurred: 'DataLoaderFactory' object has no attribute 'create_data_loader'
+Traceback (most recent call last):
+  File "/nas2/jieui/class/deepnlp/project/scripts/train.py", line 46, in main
+    train_loader = data_loader_factory.create_data_loader(
+AttributeError: 'DataLoaderFactory' object has no attribute 'create_data_loader'
