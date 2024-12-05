@@ -1,0 +1,20 @@
+[2024-12-05 16:33:17] INFO - train: Starting training process...
+[2024-12-05 16:33:17] INFO - train: Loading configurations...
+[2024-12-05 16:33:17] INFO - train: Using device: cuda
+[2024-12-05 16:33:17] INFO - train: Creating data loaders...
+[2024-12-05 16:33:59] INFO - train: Setting up models and trainer...
+[2024-12-05 16:33:59] INFO - train: Initializing context_aware distillation training...
+[2024-12-05 16:34:02] INFO - train: Starting training...
+[2024-12-05 16:34:03] ERROR - train: An error occurred: 'dict' object has no attribute 'hidden_states'
+Traceback (most recent call last):
+  File "/nas2/jieui/class/deepnlp/project/scripts/train.py", line 129, in main
+    trainer.train()
+  File "/nas2/jieui/class/deepnlp/project/src/trainers/base_trainer.py", line 72, in train
+    loss = self._training_step(batch)
+  File "/nas2/jieui/class/deepnlp/project/src/trainers/context_aware_distillation_trainer.py", line 62, in _training_step
+    outputs = self.model(
+  File "/nas2/jieui/class/deepnlp/deepja/lib/python3.10/site-packages/torch/nn/modules/module.py", line 1501, in _call_impl
+    return forward_call(*args, **kwargs)
+  File "/nas2/jieui/class/deepnlp/project/src/models/context_aware_distillation.py", line 50, in forward
+    teacher_hidden = teacher_outputs.hidden_states[-1]
+AttributeError: 'dict' object has no attribute 'hidden_states'

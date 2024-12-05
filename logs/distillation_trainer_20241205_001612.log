@@ -1,0 +1,7 @@
+[2024-12-05 00:18:06] WARNING - distillation_trainer: No labels found in evaluation data. Skipping metric calculation.
+[2024-12-05 00:18:14] INFO - distillation_trainer: Saved checkpoint: checkpoints/checkpoint_epoch_0.pt
+[2024-12-05 00:18:23] INFO - distillation_trainer: Saved best model: checkpoints/best_model.pt
+[2024-12-05 00:20:17] WARNING - distillation_trainer: No labels found in evaluation data. Skipping metric calculation.
+[2024-12-05 00:20:26] INFO - distillation_trainer: Saved checkpoint: checkpoints/checkpoint_epoch_1.pt
+[2024-12-05 00:22:20] WARNING - distillation_trainer: No labels found in evaluation data. Skipping metric calculation.
+[2024-12-05 00:22:29] INFO - distillation_trainer: Saved checkpoint: checkpoints/checkpoint_epoch_2.pt

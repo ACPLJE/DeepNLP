@@ -1,0 +1,25 @@
+[2024-12-05 15:31:52] INFO - train: Starting training process...
+[2024-12-05 15:31:52] INFO - train: Loading configurations...
+[2024-12-05 15:31:53] ERROR - train: An error occurred: 'utf-8' codec can't decode byte 0xc0 in position 136: invalid start byte
+Traceback (most recent call last):
+  File "/nas2/jieui/class/deepnlp/project/scripts/train.py", line 42, in main
+    model_configs = [load_config(path.strip()) for path in args.model_config.split(',')]
+  File "/nas2/jieui/class/deepnlp/project/scripts/train.py", line 42, in <listcomp>
+    model_configs = [load_config(path.strip()) for path in args.model_config.split(',')]
+  File "/nas2/jieui/class/deepnlp/project/scripts/train.py", line 21, in load_config
+    return yaml.safe_load(f)
+  File "/nas2/jieui/class/deepnlp/deepja/lib/python3.10/site-packages/yaml/__init__.py", line 125, in safe_load
+    return load(stream, SafeLoader)
+  File "/nas2/jieui/class/deepnlp/deepja/lib/python3.10/site-packages/yaml/__init__.py", line 79, in load
+    loader = Loader(stream)
+  File "/nas2/jieui/class/deepnlp/deepja/lib/python3.10/site-packages/yaml/loader.py", line 34, in __init__
+    Reader.__init__(self, stream)
+  File "/nas2/jieui/class/deepnlp/deepja/lib/python3.10/site-packages/yaml/reader.py", line 85, in __init__
+    self.determine_encoding()
+  File "/nas2/jieui/class/deepnlp/deepja/lib/python3.10/site-packages/yaml/reader.py", line 124, in determine_encoding
+    self.update_raw()
+  File "/nas2/jieui/class/deepnlp/deepja/lib/python3.10/site-packages/yaml/reader.py", line 178, in update_raw
+    data = self.stream.read(size)
+  File "/usr/lib/python3.10/codecs.py", line 322, in decode
+    (result, consumed) = self._buffer_decode(data, self.errors, final)
+UnicodeDecodeError: 'utf-8' codec can't decode byte 0xc0 in position 136: invalid start byte

@@ -1,0 +1,10 @@
+# configs/model_configs/teacher_config.yaml
+model:
+  type: "bert"
+  model_name: "bert-base-uncased"  
+  max_length: 384
+  doc_stride: 128
+  pretrained: true
+  dropout_rate: 0.1
+  output_hidden_states: true
+  layer_wise_distillation: true

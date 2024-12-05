@@ -1,4 +1,3 @@
-# src/models/model_factory.py
 from transformers import AutoModel, AutoConfig
 from .base_model import BaseModel
 from .context_aware_distillation import ContextAwareDistillationModel
@@ -20,27 +19,30 @@ class ModelFactory:
         Raises:
             ValueError: If model_type is not supported
         """
+
+        config = model_config['model']
+        
         if model_type.lower() == 'bert':
-            base_model = AutoModel.from_pretrained(model_config['model_name'])
+            base_model = AutoModel.from_pretrained(config['model_name']) 
             model = BaseModel(
                 base_model=base_model,
-                hidden_size=model_config['hidden_size'],
+                hidden_size=config['hidden_size'] if 'hidden_size' in config else 768,  
                 num_labels=2  # start and end position
             )
             
         elif model_type.lower() == 'distilbert':
-            base_model = AutoModel.from_pretrained(model_config['model_name'])
+            base_model = AutoModel.from_pretrained(config['model_name'])  
             model = BaseModel(
                 base_model=base_model,
-                hidden_size=model_config['hidden_size'],
+                hidden_size=config['hidden_size'] if 'hidden_size' in config else 768,
                 num_labels=2
             )
             
         elif model_type.lower() == 'roberta':
-            base_model = AutoModel.from_pretrained(model_config['model_name'])
+            base_model = AutoModel.from_pretrained(config['model_name']) 
             model = BaseModel(
                 base_model=base_model,
-                hidden_size=model_config['hidden_size'],
+                hidden_size=config['hidden_size'] if 'hidden_size' in config else 768,
                 num_labels=2
             )
             

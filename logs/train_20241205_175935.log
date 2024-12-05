@@ -1,0 +1,38 @@
+[2024-12-05 17:59:35] INFO - train: Starting training process...
+[2024-12-05 17:59:35] INFO - train: Loading configurations...
+[2024-12-05 17:59:35] INFO - train: Using device: cuda
+[2024-12-05 17:59:35] INFO - train: Creating data loaders...
+[2024-12-05 18:00:19] INFO - train: Setting up models and trainer...
+[2024-12-05 18:00:19] INFO - train: Initializing context_aware distillation training...
+[2024-12-05 18:00:23] INFO - train: Starting training...
+[2024-12-05 18:00:23] ERROR - train: An error occurred: Expected all tensors to be on the same device, but found at least two devices, cuda:0 and cpu! (when checking argument for argument index in method wrapper_CUDA__index_select)
+Traceback (most recent call last):
+  File "/nas2/jieui/class/deepnlp/project/scripts/train.py", line 131, in main
+    trainer.train()
+  File "/nas2/jieui/class/deepnlp/project/src/trainers/base_trainer.py", line 106, in train
+    loss = self._training_step(batch)
+  File "/nas2/jieui/class/deepnlp/project/src/trainers/context_aware_distillation_trainer.py", line 61, in _training_step
+    outputs = self.model(
+  File "/nas2/jieui/class/deepnlp/deepja/lib/python3.10/site-packages/torch/nn/modules/module.py", line 1501, in _call_impl
+    return forward_call(*args, **kwargs)
+  File "/nas2/jieui/class/deepnlp/project/src/models/context_aware_distillation.py", line 61, in forward
+    teacher_outputs = self.teacher(
+  File "/nas2/jieui/class/deepnlp/deepja/lib/python3.10/site-packages/torch/nn/modules/module.py", line 1501, in _call_impl
+    return forward_call(*args, **kwargs)
+  File "/nas2/jieui/class/deepnlp/project/src/models/base_model.py", line 17, in forward
+    outputs = self.base_model(
+  File "/nas2/jieui/class/deepnlp/deepja/lib/python3.10/site-packages/torch/nn/modules/module.py", line 1501, in _call_impl
+    return forward_call(*args, **kwargs)
+  File "/nas2/jieui/class/deepnlp/deepja/lib/python3.10/site-packages/transformers/models/bert/modeling_bert.py", line 1078, in forward
+    embedding_output = self.embeddings(
+  File "/nas2/jieui/class/deepnlp/deepja/lib/python3.10/site-packages/torch/nn/modules/module.py", line 1501, in _call_impl
+    return forward_call(*args, **kwargs)
+  File "/nas2/jieui/class/deepnlp/deepja/lib/python3.10/site-packages/transformers/models/bert/modeling_bert.py", line 211, in forward
+    inputs_embeds = self.word_embeddings(input_ids)
+  File "/nas2/jieui/class/deepnlp/deepja/lib/python3.10/site-packages/torch/nn/modules/module.py", line 1501, in _call_impl
+    return forward_call(*args, **kwargs)
+  File "/nas2/jieui/class/deepnlp/deepja/lib/python3.10/site-packages/torch/nn/modules/sparse.py", line 162, in forward
+    return F.embedding(
+  File "/nas2/jieui/class/deepnlp/deepja/lib/python3.10/site-packages/torch/nn/functional.py", line 2210, in embedding
+    return torch.embedding(weight, input, padding_idx, scale_grad_by_freq, sparse)
+RuntimeError: Expected all tensors to be on the same device, but found at least two devices, cuda:0 and cpu! (when checking argument for argument index in method wrapper_CUDA__index_select)

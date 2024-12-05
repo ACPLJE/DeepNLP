@@ -1,0 +1,20 @@
+[2024-12-05 18:14:06] INFO - train: Starting training process...
+[2024-12-05 18:14:06] INFO - train: Loading configurations...
+[2024-12-05 18:14:06] INFO - train: Using device: cuda
+[2024-12-05 18:14:06] INFO - train: Creating data loaders...
+[2024-12-05 18:14:48] INFO - train: Setting up models and trainer...
+[2024-12-05 18:14:48] INFO - train: Initializing context_aware distillation training...
+[2024-12-05 18:14:52] INFO - train: Starting training...
+[2024-12-05 18:14:54] ERROR - train: An error occurred: Trying to backward through the graph a second time (or directly access saved tensors after they have already been freed). Saved intermediate values of the graph are freed when you call .backward() or autograd.grad(). Specify retain_graph=True if you need to backward through the graph a second time or if you need to access saved tensors after calling backward.
+Traceback (most recent call last):
+  File "/nas2/jieui/class/deepnlp/project/scripts/train.py", line 131, in main
+    trainer.train()
+  File "/nas2/jieui/class/deepnlp/project/src/trainers/base_trainer.py", line 132, in train
+    raise e
+  File "/nas2/jieui/class/deepnlp/project/src/trainers/base_trainer.py", line 94, in train
+    loss.backward()
+  File "/nas2/jieui/class/deepnlp/deepja/lib/python3.10/site-packages/torch/_tensor.py", line 487, in backward
+    torch.autograd.backward(
+  File "/nas2/jieui/class/deepnlp/deepja/lib/python3.10/site-packages/torch/autograd/__init__.py", line 200, in backward
+    Variable._execution_engine.run_backward(  # Calls into the C++ engine to run the backward pass
+RuntimeError: Trying to backward through the graph a second time (or directly access saved tensors after they have already been freed). Saved intermediate values of the graph are freed when you call .backward() or autograd.grad(). Specify retain_graph=True if you need to backward through the graph a second time or if you need to access saved tensors after calling backward.

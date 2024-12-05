@@ -1,0 +1,22 @@
+[2024-12-05 16:52:09] INFO - train: Starting training process...
+[2024-12-05 16:52:09] INFO - train: Loading configurations...
+[2024-12-05 16:52:09] INFO - train: Using device: cuda
+[2024-12-05 16:52:09] INFO - train: Creating data loaders...
+[2024-12-05 16:52:51] INFO - train: Setting up models and trainer...
+[2024-12-05 16:52:51] INFO - train: Initializing context_aware distillation training...
+[2024-12-05 16:52:55] INFO - train: Starting training...
+[2024-12-05 16:52:57] ERROR - train: An error occurred: 'ContextAwareDistillationModel' object has no attribute 'sequence_pooling'
+Traceback (most recent call last):
+  File "/nas2/jieui/class/deepnlp/project/scripts/train.py", line 129, in main
+    trainer.train()
+  File "/nas2/jieui/class/deepnlp/project/src/trainers/base_trainer.py", line 72, in train
+    loss = self._training_step(batch)
+  File "/nas2/jieui/class/deepnlp/project/src/trainers/context_aware_distillation_trainer.py", line 62, in _training_step
+    outputs = self.model(
+  File "/nas2/jieui/class/deepnlp/deepja/lib/python3.10/site-packages/torch/nn/modules/module.py", line 1501, in _call_impl
+    return forward_call(*args, **kwargs)
+  File "/nas2/jieui/class/deepnlp/project/src/models/context_aware_distillation.py", line 72, in forward
+    sequence_weights = self.sequence_pooling(teacher_projected)
+  File "/nas2/jieui/class/deepnlp/deepja/lib/python3.10/site-packages/torch/nn/modules/module.py", line 1614, in __getattr__
+    raise AttributeError("'{}' object has no attribute '{}'".format(
+AttributeError: 'ContextAwareDistillationModel' object has no attribute 'sequence_pooling'

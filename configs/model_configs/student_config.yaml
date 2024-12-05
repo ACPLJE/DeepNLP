@@ -1,0 +1,9 @@
+# configs/model_configs/student_config.yaml
+model:
+  type: "distilbert"
+  model_name: "distilbert-base-uncased"  
+  max_length: 384
+  doc_stride: 128
+  pretrained: true
+  dropout_rate: 0.1
+  output_hidden_states: true

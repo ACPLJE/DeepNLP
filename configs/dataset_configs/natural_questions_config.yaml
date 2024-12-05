@@ -1,17 +1,13 @@
 # configs/dataset_configs/natural_questions_config.yaml
-dataset:
-  name: "natural_questions"
-  version: "0.0.2"
-  preprocessing:
-    max_seq_length: 512
-    doc_stride: 128
-    max_query_length: 64
-    pad_to_max_length: true
-    truncation: true
-    return_overflowing_tokens: true
-    return_offsets_mapping: true
-  data_loader:
-    train_batch_size: 12
-    eval_batch_size: 24
-    num_workers: 4
-    pin_memory: true
+name: "natural_questions"
+data_path: "data/natural_questions"
+preprocessing:
+  max_seq_length: 384
+  doc_stride: 128
+  max_query_length: 64
+  max_answer_length: 30
+  train_file: "train.jsonl"
+  dev_file: "dev.jsonl"
+augmentation:
+  enabled: false
+  techniques: []

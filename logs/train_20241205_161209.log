@@ -1,0 +1,17 @@
+[2024-12-05 16:12:09] INFO - train: Starting training process...
+[2024-12-05 16:12:09] INFO - train: Loading configurations...
+[2024-12-05 16:12:09] INFO - train: Using device: cuda
+[2024-12-05 16:12:09] INFO - train: Creating data loaders...
+[2024-12-05 16:12:50] INFO - train: Setting up models and trainer...
+[2024-12-05 16:12:50] INFO - train: Initializing context_aware distillation training...
+[2024-12-05 16:12:54] ERROR - train: An error occurred: 'NoneType' object has no attribute 'parameters'
+Traceback (most recent call last):
+  File "/nas2/jieui/class/deepnlp/project/scripts/train.py", line 82, in main
+    trainer = ContextAwareDistillationTrainer(
+  File "/nas2/jieui/class/deepnlp/project/src/trainers/context_aware_distillation_trainer.py", line 18, in __init__
+    super().__init__(
+  File "/nas2/jieui/class/deepnlp/project/src/trainers/base_trainer.py", line 19, in __init__
+    self.setup_optimization()
+  File "/nas2/jieui/class/deepnlp/project/src/trainers/base_trainer.py", line 23, in setup_optimization
+    self.model.parameters(),
+AttributeError: 'NoneType' object has no attribute 'parameters'

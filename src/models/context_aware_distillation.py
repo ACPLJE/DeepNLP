@@ -5,54 +5,56 @@ import math
 from .continuous_token_representation import ContinuousTokenRepresentation
 
 class ContextAwareDistillationModel(nn.Module):
-    def __init__(self, teacher_model, student_model, config):
+
+    def __init__(self, teacher_model, student_model, config):  
         super().__init__()
         self.teacher = teacher_model
         self.student = student_model
-        self.config = config
+        self.config = config.get('model', {})
+    
+        required_keys = ['hidden_size', 'dropout_rate']
+        missing_keys = [key for key in required_keys if key not in self.config]
         
-        # Token representation
+        if missing_keys:
+            raise KeyError(f"Missing required configuration keys in model config: {missing_keys}. Available keys: {list(self.config.keys())}")
         self.continuous_token_rep = ContinuousTokenRepresentation(
             self.student.config.vocab_size,
-            self.config.hidden_size,
-            self.config.dropout_rate
+            self.config['hidden_size'],
+            self.config['dropout_rate']
         )
-        
         # Token to Query transformation
-        self.token_to_query = nn.Linear(self.config.hidden_size, self.config.hidden_size)
-        
-        # Sequence to Key/Value transformations
-        self.sequence_to_key = nn.Linear(self.config.hidden_size, self.config.hidden_size)
-        self.sequence_to_value = nn.Linear(self.config.hidden_size, self.config.hidden_size)
-        
-        # Sequence representation pooling
+        self.token_to_query = nn.Linear(self.config['hidden_size'], self.config['hidden_size'])
         self.sequence_pooling = nn.Sequential(
-            nn.Linear(self.config.hidden_size, self.config.hidden_size),
+            nn.Linear(self.config['hidden_size'], self.config['hidden_size']),
             nn.Tanh(),
-            nn.Linear(self.config.hidden_size, 1)
+            nn.Linear(self.config['hidden_size'], 1)
         )
+        # Sequence to key/value transformations
+        self.sequence_to_key = nn.Linear(self.config['hidden_size'], self.config['hidden_size'])
+        self.sequence_to_value = nn.Linear(self.config['hidden_size'], self.config['hidden_size'])
         
-        # Context normalization and processing
-        self.context_layer_norm = nn.LayerNorm(self.config.hidden_size)
-        self.context_dropout = nn.Dropout(self.config.dropout_rate)
+        # Normalization and dropout for context
+        self.context_layer_norm = nn.LayerNorm(self.config['hidden_size'])
+        self.context_dropout = nn.Dropout(self.config['dropout_rate'])
         
         # Sequence context processing
         self.sequence_context = nn.Sequential(
-            nn.Linear(self.config.hidden_size, self.config.hidden_size * 2),
-            nn.LayerNorm(self.config.hidden_size * 2),
+            nn.Linear(self.config['hidden_size'], self.config['hidden_size'] * 2),
+            nn.LayerNorm(self.config['hidden_size'] * 2),
             nn.ReLU(),
-            nn.Dropout(self.config.dropout_rate),
-            nn.Linear(self.config.hidden_size * 2, self.config.hidden_size)
+            nn.Dropout(self.config['dropout_rate']), 
+            nn.Linear(self.config['hidden_size'] * 2, self.config['hidden_size'])
         )
         
         # Teacher projection
         self.teacher_projection = nn.Linear(
             self.teacher.config.hidden_size,
-            self.config.hidden_size
+            self.config['hidden_size']
         )
         
         # Output layers
-        self.qa_outputs = nn.Linear(self.config.hidden_size, 2)
+        self.qa_outputs = nn.Linear(self.config['hidden_size'], 2)
+        
         
     def forward(self, input_ids, attention_mask, token_type_ids=None):
         # Teacher forward pass
@@ -62,7 +64,7 @@ class ContextAwareDistillationModel(nn.Module):
             token_type_ids=token_type_ids,
             output_hidden_states=True
         )
-        teacher_hidden = teacher_outputs.hidden_states[-1]
+        teacher_hidden = teacher_outputs['hidden_states'][-1]
         teacher_projected = self.teacher_projection(teacher_hidden)
         
         # Student forward with continuous token representation
@@ -70,10 +72,10 @@ class ContextAwareDistillationModel(nn.Module):
         student_outputs = self.student(
             inputs_embeds=continuous_tokens,
             attention_mask=attention_mask,
-            token_type_ids=token_type_ids,
+
             output_hidden_states=True
         )
-        student_hidden = student_outputs.hidden_states[-1]
+        student_hidden = student_outputs['hidden_states'][-1]
         
         # Token-level context processing
         # 1. Transform tokens to queries
@@ -131,7 +133,11 @@ class ContextAwareDistillationModel(nn.Module):
         }
 
     def compute_loss(self, start_positions, end_positions, start_logits, end_logits):
-        # Compute QA loss
+        # Ensure all tensors are on the same device as the model
+        device = start_logits.device
+        start_positions = start_positions.to(device)
+        end_positions = end_positions.to(device)
+        
         start_loss = nn.CrossEntropyLoss()(start_logits, start_positions)
         end_loss = nn.CrossEntropyLoss()(end_logits, end_positions)
         total_loss = (start_loss + end_loss) / 2

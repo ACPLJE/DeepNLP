@@ -70,25 +70,35 @@ class QADataset(Dataset):
                             end_token = tokens.char_to_token(start_char + len(answer_text) - 1)
                             
                             if start_token is not None and end_token is not None:
-                                examples.append({
+                                example = {
                                     'input_ids': tokenized['input_ids'][i],
                                     'attention_mask': tokenized['attention_mask'][i],
-                                    'token_type_ids': tokenized['token_type_ids'][i],
                                     'start_positions': start_token,
                                     'end_positions': end_token,
                                     'overflow_to_sample_mapping': tokenized['overflow_to_sample_mapping'][i]
-                                })
+                                }
+                                # Add token_type_ids if available
+                                if 'token_type_ids' in tokenized:
+                                    example['token_type_ids'] = tokenized['token_type_ids'][i]
+                                else:
+                                    example['token_type_ids'] = [0] * len(tokenized['input_ids'][i])
+                                examples.append(example)
                     else:
                         # For validation, store original text for evaluation
-                        examples.append({
+                        example = {
                             'input_ids': tokenized['input_ids'][0],
                             'attention_mask': tokenized['attention_mask'][0],
-                            'token_type_ids': tokenized['token_type_ids'][0],
                             'example_id': qa['id'],
                             'context': context,
                             'question': question,
                             'answers': qa['answers']
-                        })
+                        }
+                        # Add token_type_ids if available
+                        if 'token_type_ids' in tokenized:
+                            example['token_type_ids'] = tokenized['token_type_ids'][0]
+                        else:
+                            example['token_type_ids'] = [0] * len(tokenized['input_ids'][0])
+                        examples.append(example)
         
         return examples
     

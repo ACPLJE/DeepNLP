@@ -1,0 +1,9 @@
+[2024-12-05 15:24:16] INFO - train: Starting training process...
+[2024-12-05 15:24:16] INFO - train: Loading configurations...
+[2024-12-05 15:24:16] ERROR - train: An error occurred: [Errno 2] No such file or directory: 'config.yaml'
+Traceback (most recent call last):
+  File "/nas2/jieui/class/deepnlp/project/scripts/train.py", line 40, in main
+    base_config = load_config(args.config)
+  File "/nas2/jieui/class/deepnlp/project/scripts/train.py", line 20, in load_config
+    with open(config_path, 'r') as f:
+FileNotFoundError: [Errno 2] No such file or directory: 'config.yaml'

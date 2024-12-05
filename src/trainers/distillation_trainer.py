@@ -5,7 +5,7 @@ import torch.nn.functional as F
 from .base_trainer import BaseTrainer
 from transformers import BertModel, DistilBertModel
 from tqdm import tqdm
-
+from src.models.context_aware_distillation import ContextAwareDistillationModel
 
 import torch
 import torch.nn as nn
@@ -35,71 +35,35 @@ class DistillationTrainer(BaseTrainer):
         self.teacher_model.eval()
         self.student_model = student_model
         self.setup_loss_functions()
-      
+        self.distillation_model = ContextAwareDistillationModel(
+        teacher_model=self.teacher_model,
+        student_model=self.student_model,
+        config=config
+        )
     def _training_step(self, batch):
         self.optimizer.zero_grad()
         
-
         input_ids = batch['input_ids'].to(self.device)
         attention_mask = batch['attention_mask'].to(self.device)
-
         token_type_ids = batch['token_type_ids'].to(self.device) if 'token_type_ids' in batch else None
-        start_positions = batch['start_positions'].to(self.device) if 'start_positions' in batch else None
-        end_positions = batch['end_positions'].to(self.device) if 'end_positions' in batch else None
         
-
-        with torch.no_grad():
-            if isinstance(self.teacher_model.base_model, BertModel):
-                teacher_outputs = self.teacher_model(
-                    input_ids=input_ids,
-                    attention_mask=attention_mask,
-                    token_type_ids=token_type_ids
-                )
-            else: 
-                teacher_outputs = self.teacher_model(
-                    input_ids=input_ids,
-                    attention_mask=attention_mask
-                )
+        # context-aware distillation model 사용
+        outputs = self.distillation_model(
+            input_ids=input_ids,
+            attention_mask=attention_mask,
+            token_type_ids=token_type_ids
+        )
         
-    
-        if isinstance(self.model.base_model, BertModel):
-            student_outputs = self.model(
-                input_ids=input_ids,
-                attention_mask=attention_mask,
-                token_type_ids=token_type_ids
-            )
-        else: 
-            student_outputs = self.model(
-                input_ids=input_ids,
-                attention_mask=attention_mask
+        if 'start_positions' in batch and 'end_positions' in batch:
+            start_positions = batch['start_positions'].to(self.device)
+            end_positions = batch['end_positions'].to(self.device)
+            loss = self.distillation_model.compute_loss(
+                start_positions, 
+                end_positions,
+                outputs['start_logits'],
+                outputs['end_logits']
             )
         
-
-        temperature = self.config['training'].get('temperature', 2.0)
-        alpha = self.config['training'].get('alpha', 0.5)
-        
-
-        start_distillation_loss = self.kl_loss_fct(
-            F.log_softmax(student_outputs['start_logits'] / temperature, dim=-1),
-            F.softmax(teacher_outputs['start_logits'] / temperature, dim=-1)
-        ) * (temperature ** 2)
-        
-        end_distillation_loss = self.kl_loss_fct(
-            F.log_softmax(student_outputs['end_logits'] / temperature, dim=-1),
-            F.softmax(teacher_outputs['end_logits'] / temperature, dim=-1)
-        ) * (temperature ** 2)
-        
-        distillation_loss = (start_distillation_loss + end_distillation_loss) / 2
-        
-
-        if start_positions is not None and end_positions is not None:
-            start_loss = F.cross_entropy(student_outputs['start_logits'], start_positions)
-            end_loss = F.cross_entropy(student_outputs['end_logits'], end_positions)
-            student_loss = (start_loss + end_loss) / 2
-            loss = alpha * student_loss + (1 - alpha) * distillation_loss
-        else:
-            loss = distillation_loss
-            
         loss.backward()
         self.optimizer.step()
         self.scheduler.step()
