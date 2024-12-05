@@ -1,6 +1,7 @@
 # src/models/context_aware_distillation.py
 import torch
 import torch.nn as nn
+import math
 from .continuous_token_representation import ContinuousTokenRepresentation
 
 class ContextAwareDistillationModel(nn.Module):
@@ -17,13 +18,25 @@ class ContextAwareDistillationModel(nn.Module):
             self.config.dropout_rate
         )
         
-        # Context layers
-        self.token_context = nn.MultiheadAttention(
-            embed_dim=self.config.hidden_size,
-            num_heads=self.config.num_heads,
-            dropout=self.config.dropout_rate
+        # Token to Query transformation
+        self.token_to_query = nn.Linear(self.config.hidden_size, self.config.hidden_size)
+        
+        # Sequence to Key/Value transformations
+        self.sequence_to_key = nn.Linear(self.config.hidden_size, self.config.hidden_size)
+        self.sequence_to_value = nn.Linear(self.config.hidden_size, self.config.hidden_size)
+        
+        # Sequence representation pooling
+        self.sequence_pooling = nn.Sequential(
+            nn.Linear(self.config.hidden_size, self.config.hidden_size),
+            nn.Tanh(),
+            nn.Linear(self.config.hidden_size, 1)
         )
         
+        # Context normalization and processing
+        self.context_layer_norm = nn.LayerNorm(self.config.hidden_size)
+        self.context_dropout = nn.Dropout(self.config.dropout_rate)
+        
+        # Sequence context processing
         self.sequence_context = nn.Sequential(
             nn.Linear(self.config.hidden_size, self.config.hidden_size * 2),
             nn.LayerNorm(self.config.hidden_size * 2),
@@ -32,7 +45,7 @@ class ContextAwareDistillationModel(nn.Module):
             nn.Linear(self.config.hidden_size * 2, self.config.hidden_size)
         )
         
-        # Projections
+        # Teacher projection
         self.teacher_projection = nn.Linear(
             self.teacher.config.hidden_size,
             self.config.hidden_size
@@ -62,14 +75,37 @@ class ContextAwareDistillationModel(nn.Module):
         )
         student_hidden = student_outputs.hidden_states[-1]
         
-        # Token-level context
-        token_context_output, _ = self.token_context(
-            query=student_hidden.permute(1, 0, 2),
-            key=teacher_projected.permute(1, 0, 2),
-            value=teacher_projected.permute(1, 0, 2),
-            key_padding_mask=~attention_mask.bool()
-        )
-        token_context_output = token_context_output.permute(1, 0, 2)
+        # Token-level context processing
+        # 1. Transform tokens to queries
+        token_queries = self.token_to_query(student_hidden)
+        
+        # 2. Create sequence-level representation from teacher
+        sequence_weights = self.sequence_pooling(teacher_projected)
+        sequence_weights = torch.softmax(sequence_weights, dim=1)
+        sequence_repr = torch.sum(teacher_projected * sequence_weights, dim=1, keepdim=True)
+        
+        # 3. Transform sequence representation to keys and values
+        sequence_keys = self.sequence_to_key(sequence_repr)
+        sequence_values = self.sequence_to_value(sequence_repr)
+        
+        # 4. Compute attention scores
+        attention_scores = torch.matmul(token_queries, sequence_keys.transpose(-2, -1))
+        attention_scores = attention_scores / math.sqrt(token_queries.size(-1))
+        
+        # Apply attention mask if provided
+        if attention_mask is not None:
+            attention_scores = attention_scores.masked_fill(
+                ~attention_mask.unsqueeze(-1).bool(),
+                float('-inf')
+            )
+        
+        # 5. Get attention probabilities and compute context
+        attention_probs = torch.softmax(attention_scores, dim=-1)
+        token_context_output = torch.matmul(attention_probs, sequence_values)
+        
+        # Apply normalization and dropout
+        token_context_output = self.context_layer_norm(token_context_output)
+        token_context_output = self.context_dropout(token_context_output)
         
         # Sequence-level context
         sequence_mask = attention_mask.unsqueeze(-1).float()
@@ -90,6 +126,13 @@ class ContextAwareDistillationModel(nn.Module):
             'student_hidden': student_hidden,
             'teacher_hidden': teacher_hidden,
             'token_context': token_context_output,
-            'sequence_context': sequence_context
+            'sequence_context': sequence_context,
+            'attention_weights': attention_probs  # for analysis
         }
 
+    def compute_loss(self, start_positions, end_positions, start_logits, end_logits):
+        # Compute QA loss
+        start_loss = nn.CrossEntropyLoss()(start_logits, start_positions)
+        end_loss = nn.CrossEntropyLoss()(end_logits, end_positions)
+        total_loss = (start_loss + end_loss) / 2
+        return total_loss

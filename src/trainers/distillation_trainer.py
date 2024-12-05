@@ -39,15 +39,15 @@ class DistillationTrainer(BaseTrainer):
     def _training_step(self, batch):
         self.optimizer.zero_grad()
         
-        # 입력을 GPU로 이동
+
         input_ids = batch['input_ids'].to(self.device)
         attention_mask = batch['attention_mask'].to(self.device)
-        # token_type_ids는 모델 타입에 따라 조건부로 전달
+
         token_type_ids = batch['token_type_ids'].to(self.device) if 'token_type_ids' in batch else None
         start_positions = batch['start_positions'].to(self.device) if 'start_positions' in batch else None
         end_positions = batch['end_positions'].to(self.device) if 'end_positions' in batch else None
         
-        # 교사 모델의 출력
+
         with torch.no_grad():
             if isinstance(self.teacher_model.base_model, BertModel):
                 teacher_outputs = self.teacher_model(
@@ -55,30 +55,30 @@ class DistillationTrainer(BaseTrainer):
                     attention_mask=attention_mask,
                     token_type_ids=token_type_ids
                 )
-            else:  # DistilBERT나 다른 모델의 경우
+            else: 
                 teacher_outputs = self.teacher_model(
                     input_ids=input_ids,
                     attention_mask=attention_mask
                 )
         
-        # 학생 모델의 출력
+    
         if isinstance(self.model.base_model, BertModel):
             student_outputs = self.model(
                 input_ids=input_ids,
                 attention_mask=attention_mask,
                 token_type_ids=token_type_ids
             )
-        else:  # DistilBERT의 경우
+        else: 
             student_outputs = self.model(
                 input_ids=input_ids,
                 attention_mask=attention_mask
             )
         
-        # 증류 손실 계산
+
         temperature = self.config['training'].get('temperature', 2.0)
         alpha = self.config['training'].get('alpha', 0.5)
         
-        # QA 모델을 위한 start/end logits에 대한 증류 손실
+
         start_distillation_loss = self.kl_loss_fct(
             F.log_softmax(student_outputs['start_logits'] / temperature, dim=-1),
             F.softmax(teacher_outputs['start_logits'] / temperature, dim=-1)
@@ -91,7 +91,7 @@ class DistillationTrainer(BaseTrainer):
         
         distillation_loss = (start_distillation_loss + end_distillation_loss) / 2
         
-        # 하드 타겟에 대한 손실 (start/end positions이 있는 경우)
+
         if start_positions is not None and end_positions is not None:
             start_loss = F.cross_entropy(student_outputs['start_logits'], start_positions)
             end_loss = F.cross_entropy(student_outputs['end_logits'], end_positions)
@@ -195,29 +195,51 @@ class DistillationTrainer(BaseTrainer):
         
         with torch.no_grad():
             for batch in tqdm(self.eval_dataloader, desc='Evaluating'):
-                batch = {k: v.to(self.device) if isinstance(v, torch.Tensor) else v 
-                        for k, v in batch.items()}
+              
+                model_inputs = {
+                    'input_ids': batch['input_ids'].to(self.device),
+                    'attention_mask': batch['attention_mask'].to(self.device),
+                }
                 
-                outputs = self.model(**batch)
+              
+                if 'token_type_ids' in batch:
+                    model_inputs['token_type_ids'] = batch['token_type_ids'].to(self.device)
                 
-                # Calculate QA loss
-                qa_loss = (self.qa_loss_fct(outputs['start_logits'], batch['start_positions']) +
-                          self.qa_loss_fct(outputs['end_logits'], batch['end_positions'])) / 2
+                outputs = self.model(**model_inputs)
                 
-                total_qa_loss += qa_loss.item()
-                
-                # Get predictions
-                start_preds = torch.argmax(outputs['start_logits'], dim=1)
-                end_preds = torch.argmax(outputs['end_logits'], dim=1)
-                
-                all_predictions.extend(list(zip(start_preds.cpu().numpy(), 
-                                             end_preds.cpu().numpy())))
-                all_labels.extend(list(zip(batch['start_positions'].cpu().numpy(),
-                                         batch['end_positions'].cpu().numpy())))
+            
+                if 'start_positions' in batch and 'end_positions' in batch:
+                    start_positions = batch['start_positions'].to(self.device)
+                    end_positions = batch['end_positions'].to(self.device)
+                    
+                    qa_loss = (self.qa_loss_fct(outputs['start_logits'], start_positions) +
+                              self.qa_loss_fct(outputs['end_logits'], end_positions)) / 2
+                    
+                    total_qa_loss += qa_loss.item()
+                    
+               
+                    start_preds = torch.argmax(outputs['start_logits'], dim=1)
+                    end_preds = torch.argmax(outputs['end_logits'], dim=1)
+                    
+                    all_predictions.extend(list(zip(start_preds.cpu().numpy(), 
+                                                 end_preds.cpu().numpy())))
+                    all_labels.extend(list(zip(start_positions.cpu().numpy(),
+                                             end_positions.cpu().numpy())))
+                else:
+                 
+                    start_preds = torch.argmax(outputs['start_logits'], dim=1)
+                    end_preds = torch.argmax(outputs['end_logits'], dim=1)
+                    all_predictions.extend(list(zip(start_preds.cpu().numpy(), 
+                                                 end_preds.cpu().numpy())))
         
-        # Calculate metrics
-        metrics = self.calculate_metrics(all_predictions, all_labels)
-        metrics['qa_loss'] = total_qa_loss / len(self.eval_dataloader)
+       
+        metrics = {}
+        if all_labels:
+            metrics = self.calculate_metrics(all_predictions, all_labels)
+            metrics['qa_loss'] = total_qa_loss / len(self.eval_dataloader)
+        else:
+            self.logger.warning("No labels found in evaluation data. Skipping metric calculation.")
+            metrics['qa_loss'] = float('nan')  
         
         return metrics
     

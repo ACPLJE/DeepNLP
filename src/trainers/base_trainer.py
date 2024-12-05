@@ -64,13 +64,13 @@ class BaseTrainer:
     def train(self):
         self.model.to(self.device)
         best_metric = float('-inf')
+        checkpoint_dir = self.config['training'].get('checkpoint_dir', 'checkpoints')
         
         for epoch in range(self.config['training']['num_epochs']):
             self.model.train()
             total_loss = 0
             
             for batch_idx, batch in enumerate(self.train_dataloader):
-                # 기존의 training 로직...
                 loss = self._training_step(batch)
                 total_loss += loss
                 
@@ -79,6 +79,31 @@ class BaseTrainer:
                     print(f'Epoch: {epoch} [{current}/{len(self.train_dataloader.dataset)} '
                           f'({100. * batch_idx / len(self.train_dataloader):.0f}%)]\tLoss: {loss:.6f}')
     
-            # epoch 종료 후 평균 loss 계산
+           
             avg_loss = total_loss / len(self.train_dataloader)
             print(f'Epoch {epoch} Average Loss: {avg_loss:.6f}')
+            
+      
+            eval_metrics = self.evaluate()
+            
+        
+            self.save_checkpoint(
+                epoch=epoch,
+                metrics={
+                    'loss': avg_loss,
+                    'eval_metrics': eval_metrics
+                },
+                checkpoint_dir=checkpoint_dir
+            )
+            
+           
+            if eval_metrics.get('accuracy', 0) > best_metric: 
+                best_metric = eval_metrics.get('accuracy', 0)
+                best_checkpoint_path = os.path.join(checkpoint_dir, 'best_model.pt')
+                torch.save({
+                    'epoch': epoch,
+                    'model_state_dict': self.model.state_dict(),
+                    'optimizer_state_dict': self.optimizer.state_dict(),
+                    'metrics': eval_metrics
+                }, best_checkpoint_path)
+                self.logger.info(f'Saved best model: {best_checkpoint_path}')

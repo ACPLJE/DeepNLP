@@ -1,7 +1,8 @@
 # Base configuration for training
 training:
+  checkpoint_dir: "checkpoints"
   batch_size: 32
-  num_epochs: 3
+  num_epochs: 10
   learning_rate: 0.00005 
   warmup_steps: 0
   max_grad_norm: 1.0
